@@ -15,7 +15,6 @@ Thumbs.db
 
 .claude/
 .vscode/
-.env
 *.log
 *.pid
 data/
