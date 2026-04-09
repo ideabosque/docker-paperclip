@@ -1,0 +1,45 @@
+services:
+  db:
+    container_name: container-paperclip-db
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: paperclip
+      POSTGRES_PASSWORD: paperclip
+      POSTGRES_DB: paperclip
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperclip -d paperclip"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - "${PGDATA_HOST_PATH:-./data/postgres}:/var/lib/postgresql/data"
+
+  server:
+    container_name: container-paperclip
+    image: ghcr.io/paperclipai/paperclip:latest
+    restart: unless-stopped
+    ports:
+      - "${PAPERCLIP_PORT:-3100}:3100"
+    environment:
+      DATABASE_URL: postgres://paperclip:paperclip@db:5432/paperclip
+      PORT: "3100"
+      SERVE_UI: "true"
+      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
+      PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-http://localhost:3100}"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
+      OLLAMA_API_KEY: "${OLLAMA_API_KEY:-}"
+      USER_UID: "0"
+      USER_GID: "0"
+    volumes:
+      - "${PAPERCLIP_DATA_HOST_PATH:-./data/paperclip}:/paperclip"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  paperclip-data:
