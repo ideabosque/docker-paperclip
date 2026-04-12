@@ -17,4 +17,8 @@ Thumbs.db
 .vscode/
 *.log
 *.pid
-data/
+www/projects
+www/logs
+www/hermes
+www/paperclip
+www/postgres
