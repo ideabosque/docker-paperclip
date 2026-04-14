@@ -1,4 +1,5 @@
 services:
+  # PostgreSQL database
   db:
     container_name: container-paperclip-db
     image: postgres:${POSTGRES_VERSION:-17}-alpine
@@ -15,12 +16,24 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - "${PGDATA_HOST_PATH:-./data/postgres}:/var/lib/postgresql/data"
+      - "${PGDATA_FOLDER:-./www/postgres}:/var/lib/postgresql/data"
+    networks:
+      - paperclip-network
 
-  server:
+  # Paperclip (Node + Python runtime on AlmaLinux 10)
+  paperclip:
     container_name: container-paperclip
-    image: ghcr.io/paperclipai/paperclip:latest
-    restart: unless-stopped
+    env_file:
+      - .env
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL}
+        PYTHON: ${PYTHON}
+        NODE_VERSION: ${NODE_VERSION}
+        PAPERCLIP_BRANCH: ${PAPERCLIP_BRANCH:-master}
+        HERMES_BRANCH: ${HERMES_BRANCH:-main}
     ports:
       - "${PAPERCLIP_PORT:-3100}:3100"
     environment:
@@ -32,14 +45,18 @@ services:
       PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-http://localhost:3100}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
       OLLAMA_API_KEY: "${OLLAMA_API_KEY:-}"
-      USER_UID: "0"
-      USER_GID: "0"
     volumes:
-      - "${PAPERCLIP_DATA_HOST_PATH:-./data/paperclip}:/paperclip"
+      - ./www:/var/www
+      - "${PROJECTS_FOLDER:-./www/projects}:/var/www/projects"
+      - "${PAPERCLIP_FOLDER:-./www/paperclip}:/paperclip"
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - paperclip-network
+    command: ["supervisord", "-n"]
+    restart: unless-stopped
 
-volumes:
-  pgdata:
-  paperclip-data:
+networks:
+  paperclip-network:
+    driver: bridge
