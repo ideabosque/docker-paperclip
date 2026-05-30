@@ -33,7 +33,6 @@ services:
         PYTHON: ${PYTHON}
         NODE_VERSION: ${NODE_VERSION}
         PAPERCLIP_BRANCH: ${PAPERCLIP_BRANCH:-master}
-        HERMES_BRANCH: ${HERMES_BRANCH:-main}
     ports:
       - "${PAPERCLIP_PORT:-3100}:3100"
     environment:

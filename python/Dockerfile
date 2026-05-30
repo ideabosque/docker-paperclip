@@ -6,8 +6,6 @@ ARG PYTHON=python3.12
 ARG NODE_VERSION=22
 ARG PAPERCLIP_REPO=https://github.com/paperclipai/paperclip.git
 ARG PAPERCLIP_BRANCH=master
-ARG HERMES_REPO=https://github.com/NousResearch/hermes-agent.git
-ARG HERMES_BRANCH=main
 
 ENV PIP_INDEX_URL=${PIP_INDEX_URL}
 ENV PYTHON=${PYTHON}
@@ -53,7 +51,7 @@ RUN curl -fsSL https://rpm.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
 # Install pnpm and global AI coding tools into a system-wide location
 # so the paperclip user can read/execute them (root's home is 0550).
 ENV PNPM_HOME="/usr/local/share/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+ENV PATH="$PNPM_HOME:$PNPM_HOME/bin:$PATH"
 RUN npm install -g pnpm@latest && \
     mkdir -p $PNPM_HOME && \
     pnpm add -g @anthropic-ai/claude-code@latest && \
@@ -79,17 +77,6 @@ RUN $PYTHON -m venv /var/$PYTHON/paperclip/env && \
     pip install -r /tmp/requirements.txt -i "$PIP_INDEX_URL" && \
     chmod -R a+rX /var/$PYTHON/paperclip
 
-# Install Hermes Agent (NousResearch) via pip
-# HERMES_SRC is the source checkout — NOT HERMES_HOME, which hermes uses as its config dir.
-RUN git clone --recurse-submodules --branch ${HERMES_BRANCH} ${HERMES_REPO} /opt/hermes-agent && \
-    $PYTHON -m venv /var/$PYTHON/hermes/env && \
-    source /var/$PYTHON/hermes/env/bin/activate && \
-    pip install --upgrade pip -i "$PIP_INDEX_URL" && \
-    pip install -e "/opt/hermes-agent[all]" -i "$PIP_INDEX_URL" && \
-    cd /opt/hermes-agent && npm install && \
-    ln -sf /var/$PYTHON/hermes/env/bin/hermes /usr/local/bin/hermes && \
-    chown -R paperclip:paperclip /opt/hermes-agent && \
-    chmod -R a+rX /var/$PYTHON/hermes
 
 # Supervisor config for Paperclip
 ADD paperclip.ini /etc/supervisord.d/paperclip.ini
