@@ -56,7 +56,7 @@ RUN npm install -g pnpm@latest && \
     mkdir -p $PNPM_HOME && \
     pnpm add -g @anthropic-ai/claude-code@latest && \
     pnpm add -g @openai/codex@latest && \
-    pnpm add -g opencode-ai@latest && \
+    npm install -g opencode-ai@latest && \
     chmod -R a+rX $PNPM_HOME
 
 # Clone and build Paperclip
